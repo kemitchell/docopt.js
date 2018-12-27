@@ -43,10 +43,7 @@
     "commandline"
   ],
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/scarnie/docopt.coffee.git"
-  },
+  "repository": "kemitchell/docopt.js",
   "devDependencies": {
     "chai": "^2.2.0",
     "coffee-script": "^1.9.1",
