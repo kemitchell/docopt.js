@@ -829,13 +829,12 @@ function docopt (doc, kwargs) {
     }
   }
   var argv = kwargs.argv === void 0 ? process.argv.slice(2) : kwargs.argv
-  var name = kwargs.name === void 0 ? null : kwargs.name
   var help = kwargs.help === void 0 ? true : kwargs.help
   var version = kwargs.version === void 0 ? null : kwargs.version
   var optionsFirst = kwargs.optionsFirst === void 0 ? false : kwargs.optionsFirst
   var exit = kwargs.exit === void 0 ? true : kwargs.exit
   try {
-    usageSections = parseSection('usage:', doc)
+    var usageSections = parseSection('usage:', doc)
     if (usageSections.length === 0) {
       throw new DocoptLanguageError('"usage:" (case-insensitive) not found.')
     }
@@ -843,29 +842,20 @@ function docopt (doc, kwargs) {
       throw new DocoptLanguageError('More than one "usage:" (case-insensitive).')
     }
     DocoptExit.usage = usageSections[0]
-    options = parseDefaults(doc)
-    pattern = parsePattern(formalUsage(DocoptExit.usage), options)
-    argv = parseARGV(new Tokens(argv), options, optionsFirst)
-    patternOptions = pattern.flat(Option)
-    ref = pattern.flat(OptionsShortcut)
-    for (j = 0, len = ref.length; j < len; j++) {
-      optionsShortcut = ref[j]
-      docOptions = parseDefaults(doc)
-      patternOptionsStrings = (function () {
-        var len1, q, results
-        results = []
-        for (q = 0, len1 = patternOptions.length; q < len1; q++) {
-          i = patternOptions[q]
-          results.push(i.toString())
-        }
-        return results
-      })()
-      optionsShortcut.children = docOptions.filter(function (item) {
-        var ref1
-        return ref1 = item.toString(), Array.prototype.indexOf.call(patternOptionsStrings, ref1) < 0
+    var options = parseDefaults(doc)
+    var pattern = parsePattern(formalUsage(DocoptExit.usage), options)
+    var argv = parseARGV(new Tokens(argv), options, optionsFirst)
+    var patternOptions = pattern.flat(Option)
+    pattern.flat(OptionsShortcut).forEach(function (optionsShortcut) {
+      var docOptions = parseDefaults(doc)
+      var patternOptionsStrings = patternOptions.map(function (i) {
+        return i.toString()
       })
-    }
-    output = extras(help, version, argv, doc)
+      optionsShortcut.children = docOptions.filter(function (item) {
+        return patternOptionsStrings.indexOf(item.toString()) < 0
+      })
+    })
+    var output = extras(help, version, argv, doc)
     if (output) {
       if (exit) {
         print(output)
@@ -874,27 +864,25 @@ function docopt (doc, kwargs) {
         throw new Error(output)
       }
     }
-    ref1 = pattern.fix().match(argv), matched = ref1[0], left = ref1[1], collected = ref1[2]
+    var match = pattern.fix().match(argv)
+    var matched = match[0]
+    var left = match[1]
+    var collected = match[2]
     if (matched && left.length === 0) {
-      return new Dict((function () {
-        var len1, q, ref2, results
-        ref2 = [].concat(pattern.flat(), collected)
-        results = []
-        for (q = 0, len1 = ref2.length; q < len1; q++) {
-          a = ref2[q]
-          results.push([a.name, a.value])
-        }
-        return results
-      })()).toObject()
+      var pairs = pattern.flat()
+        .concat(collected)
+        .map(function (element) {
+          return [element.name, element.value]
+        })
+      return new Dict(pairs).toObject()
     }
     throw new DocoptExit(DocoptExit.usage)
   } catch (error) {
-    e = error
     if (!exit) {
-      throw e
+      throw error
     } else {
-      if (e.message) {
-        print(e.message)
+      if (error.message) {
+        print(error.message)
       }
       return process.exit(1)
     }
