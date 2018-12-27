@@ -842,7 +842,7 @@ function docopt (doc, kwargs) {
     DocoptExit.usage = usageSections[0]
     var options = parseDefaults(doc)
     var pattern = parsePattern(formalUsage(DocoptExit.usage), options)
-    var argv = parseARGV(new Tokens(argv), options, optionsFirst)
+    var parsedARGV = parseARGV(new Tokens(argv), options, optionsFirst)
     var patternOptions = pattern.flat(Option)
     pattern.flat(OptionsShortcut).forEach(function (optionsShortcut) {
       var docOptions = parseDefaults(doc)
@@ -853,7 +853,7 @@ function docopt (doc, kwargs) {
         return patternOptionsStrings.indexOf(item.toString()) < 0
       })
     })
-    var output = extras(help, version, argv, doc)
+    var output = extras(help, version, parsedARGV, doc)
     if (output) {
       if (exit) {
         print(output)
@@ -862,7 +862,7 @@ function docopt (doc, kwargs) {
         throw new Error(output)
       }
     }
-    var match = pattern.fix().match(argv)
+    var match = pattern.fix().match(parsedARGV)
     var matched = match[0]
     var left = match[1]
     var collected = match[2]
