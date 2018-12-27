@@ -20,28 +20,6 @@ partition = (string, separator) ->
     else
         return [String(string), '', '']
 
-startsWith =
-    if String.prototype.startsWith
-        (string, searchString, position) ->
-            return string.startsWith(searchString, position)
-    else
-        (string, searchString, position) ->
-            position = position || 0
-            return string.lastIndexOf(searchString, position) == position
-
-endsWith =
-    if String.prototype.endsWith
-        (string, searchString, position) ->
-            return string.endsWith(searchString, position)
-    else
-        (string, searchString, position) ->
-            subjectString = string.toString()
-            if (position == undefined || position > subjectString.length)
-                position = subjectString.length
-            position -= searchString.length
-            lastIndex = subjectString.indexOf(searchString, position)
-            return lastIndex != -1 && lastIndex == position
-
 _split = (string) ->
     string.trim().split(/\s+/).filter (i) -> i != ''
 
@@ -226,9 +204,9 @@ class Option extends LeafPattern
         [options, _, description] = partition(option_description.trim(), '  ')
         options = options.replace /,|=/g, ' '
         for s in _split(options)  # split on spaces
-            if startsWith(s, '--')
+            if s.startsWith('--')
                 long = s
-            else if startsWith(s, '-')
+            else if s.startsWith('-')
                 short = s
             else
                 argcount = 1
@@ -338,7 +316,7 @@ parse_section = (name, source) ->
 parse_shorts = (tokens, options) ->
     """shorts ::= '-' ( chars )* [ [ ' ' ] chars ] ;"""
     token = tokens.move()
-    console.assert startsWith(token, '-') and not startsWith(token, '--')
+    console.assert token.startsWith('-') and not token.startsWith('--')
     left = token.replace(/^-+/g, '')
     parsed = []
     while left != ''
@@ -371,11 +349,11 @@ parse_shorts = (tokens, options) ->
 parse_long = (tokens, options) ->
     """long ::= '--' chars [ ( ' ' | '=' ) chars ] ;"""
     [long, eq, value] = partition(tokens.move(), '=')
-    console.assert startsWith(long, '--')
+    console.assert long.startsWith('--')
     value = null if (eq == value and value == '')
     similar = (o for o in options when o.long == long)
     if tokens.error is DocoptExit and similar.length == 0  # if no exact match
-        similar = (o for o in options when o.long and startsWith(o.long, long))
+        similar = (o for o in options when o.long and o.long.startsWith(long))
     if similar.length > 1  # might be simply specified ambiguously 2+ times?
         longs = (o.long for o in similar).join(', ')
         throw new tokens.error("#{long} is not a unique prefix: #{longs}?")
@@ -454,11 +432,11 @@ parse_atom = (tokens, options) ->
     else if token is 'options'
         tokens.move()
         return [new OptionsShortcut]
-    else if startsWith(token, '--') and token != '--'
+    else if token.startsWith('--') and token != '--'
         return parse_long tokens, options
-    else if startsWith(token, '-') and token not in ['-', '--']
+    else if token.startsWith('-') and token not in ['-', '--']
         return parse_shorts(tokens, options)
-    else if startsWith(token, '<') and endsWith(token, '>') or isUpper(token)
+    else if token.startsWith('<') and token.endsWith('>') or isUpper(token)
         return [new Argument(tokens.move())]
     else
         [new Command tokens.move()]
@@ -475,9 +453,9 @@ parse_argv = (tokens, options, options_first=false) ->
     while tokens.current() isnt null
         if tokens.current() == '--'
             return parsed.concat(new Argument(null, v) for v in tokens)
-        else if startsWith(tokens.current(), '--')
+        else if tokens.current().startsWith('--')
             parsed = parsed.concat(parse_long(tokens, options))
-        else if startsWith(tokens.current(), '-') and tokens.current() != '-'
+        else if tokens.current().startsWith('-') and tokens.current() != '-'
             parsed = parsed.concat(parse_shorts(tokens, options))
         else if options_first
             return parsed.concat(new Argument(null, v) for v in tokens)
@@ -494,7 +472,7 @@ parse_defaults = (doc) ->
         odd  = (v for v in split by 2)
         even = (v for v in split[1..] by 2)
         split = (s1 + s2 for [s1, s2] in zip(odd, even))
-        options = (Option.parse(s) for s in split when startsWith(s, '-'))
+        options = (Option.parse(s) for s in split when s.startsWith('-'))
         defaults.push.apply(defaults, options)
     return defaults
 
