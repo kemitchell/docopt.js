@@ -17,6 +17,6 @@ Options:
   --right  use right-hand side
 
 """
-{docopt} = require '../docopt'
+docopt = require '../'
 
 console.log docopt(doc)

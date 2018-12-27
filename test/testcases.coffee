@@ -1,7 +1,7 @@
 assert = require 'assert'
 path = require 'path'
 fs = require 'fs'
-docopt = require '../docopt.coffee'
+docopt = require '../'
 
 partition = (text, delimiter) ->
     parts = text.split delimiter

@@ -12,6 +12,6 @@ Options:
   -q                       operate in quiet mode
 
 """
-{docopt} = require '../docopt'
+docopt = require '../'
 
 console.log docopt(doc, version: '1.0.0rc2')

@@ -25,11 +25,10 @@
     }
   ],
   "description": "a command line option parser that will make you smile",
-  "main": "docopt.js",
   "scripts": {
     "test": "mocha --compilers coffee:coffee-script/register",
-    "lint": "coffeelint docopt.coffee test/*.coffee",
-    "prepublish": "coffee -c docopt.coffee"
+    "lint": "coffeelint index.coffee test/*.coffee",
+    "prepublish": "coffee -c index.coffee"
   },
   "keywords": [
     "command",

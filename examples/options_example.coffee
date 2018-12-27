@@ -31,6 +31,6 @@ Options:
   --doctest            run doctest on myself
 
 """
-{docopt} = require '../docopt'
+docopt = require '../'
 
 console.log docopt(doc, version: '1.0.0rc2')

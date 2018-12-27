@@ -1,6 +1,6 @@
 chai = require 'chai'
 assert = chai.assert
-docopt = require '../docopt.coffee'
+docopt = require '../'
 
 describe "test.coffee",  ->
 

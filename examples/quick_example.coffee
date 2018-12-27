@@ -5,6 +5,6 @@ Usage:
   quick_example.coffee -h | --help | --version
 
 """
-{docopt} = require '../docopt'
+docopt = require '../'
 
 console.log docopt(doc, version: '0.1.1rc')

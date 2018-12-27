@@ -33,6 +33,6 @@ Options:
     --mirror
 
 """
-{docopt} = require '../docopt'
+docopt = require '../'
 
 console.log docopt(doc, version: '2.0')
