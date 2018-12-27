@@ -16,14 +16,9 @@ function print () {
 }
 
 function enumerate (array) {
-  var i, item, j, len, results
-  i = 0
-  results = []
-  for (j = 0, len = array.length; j < len; j++) {
-    item = array[j]
-    results.push([i++, item])
-  }
-  return results
+  return array.map(function (element, index) {
+    return [index, element]
+  })
 }
 
 function any (array) {
@@ -99,9 +94,7 @@ Pattern.prototype.fixIdentities = function (uniq) {
   if (uniq === null) {
     uniq = {}
     var flat = this.flat()
-    flat.forEach(function (k) {
-      uniq[k] = k
-    })
+    flat.forEach(function (k) { uniq[k] = k })
   }
   var self = this
   enumerate(this.children).forEach(function (pair) {
@@ -331,9 +324,7 @@ function Option (short, long, argcount, value) {
   this.short = short != null ? short : null
   this.long = long != null ? long : null
   this.argcount = argcount != null ? argcount : 0
-  if (value == null) {
-    value = false
-  }
+  if (!value) value = false
   console.assert(this.argcount === 0 || this.argcount === 1)
   this.value = value === false && this.argcount > 0 ? null : value
   this.name = this.long || this.short
@@ -468,19 +459,13 @@ Either.prototype.match = function (left, collected) {
   var outcomes = []
   this.children.forEach(function (p) {
     var outcome = p.match(left, collected)
-    if (outcome[0]) {
-      outcomes.push(outcome)
-    }
+    if (outcome[0]) outcomes.push(outcome)
   })
   if (outcomes.length > 0) {
     outcomes.sort(function (a, b) {
-      if (a[1].length > b[1].length) {
-        return 1
-      } else if (a[1].length < b[1].length) {
-        return -1
-      } else {
-        return 0
-      }
+      if (a[1].length > b[1].length) return 1
+      else if (a[1].length < b[1].length) return -1
+      else return 0
     })
     return outcomes[0]
   }
@@ -497,19 +482,13 @@ function Tokens (source, error) {
 extend(Tokens, Array)
 
 Tokens.prototype.move = function () {
-  if (this.length) {
-    return [].shift.apply(this)
-  } else {
-    return null
-  }
+  if (this.length) return [].shift.apply(this)
+  else return null
 }
 
 Tokens.prototype.current = function () {
-  if (this.length) {
-    return this[0]
-  } else {
-    return null
-  }
+  if (this.length) return this[0]
+  else return null
 }
 
 Tokens.from_pattern = function (source) {
@@ -521,9 +500,7 @@ Tokens.from_pattern = function (source) {
     results = []
     for (j = 0, len = ref.length; j < len; j++) {
       s = ref[j]
-      if (s) {
-        results.push(s)
-      }
+      if (s) results.push(s)
     }
     return results
   })()
@@ -659,11 +636,8 @@ function parseExpr (tokens, options) {
     seq = parseSeq(tokens, options)
     result = result.concat(seq.length > 1 ? [new Required(seq)] : seq)
   }
-  if (result.length > 1) {
-    return [new Either(result)]
-  } else {
-    return result
-  }
+  if (result.length > 1) return [new Either(result)]
+  else return result
 }
 
 function parseSeq (tokens, options) {
@@ -771,16 +745,12 @@ function parseDefaults (doc) {
 function formalUsage (section) {
   section = partition(section, ':')[2] // Drop "usage:"
   var pu = split(section)
-  return '( ' + ((function () {
-    var j, len, ref1, results
-    ref1 = pu.slice(1)
-    results = []
-    for (j = 0, len = ref1.length; j < len; j++) {
-      var s = ref1[j]
-      results.push(s === pu[0] ? ') | (' : s)
-    }
-    return results
-  })()).join(' ') + ' )'
+  var middle = pu.slice(1)
+    .map(function (s) {
+      return (s === pu[0] ? ') | (' : s)
+    })
+    .join(' ')
+  return '( ' + middle + ' )'
 }
 
 function extras (help, version, options, doc) {
