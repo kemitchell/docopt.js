@@ -55,13 +55,11 @@ function partition (string, separator) {
   }
 }
 
-function _split (string) {
+function split (string) {
   return string
     .trim()
     .split(/\s+/)
-    .filter(function (i) {
-      return i !== ''
-    })
+    .filter(function (i) { return i })
 }
 
 function isUpper (string) {
@@ -140,7 +138,7 @@ Pattern.prototype.fixRepeatingArguments = function () {
         if (e.value === null) {
           e.value = []
         } else if (e.value.constructor !== Array) {
-          e.value = _split(e.value)
+          e.value = split(e.value)
         }
       }
       if (
@@ -357,7 +355,7 @@ Option.parse = function (optionDescription) {
   var description = partitioned[2]
   options = options.replace(/,|=/g, ' ')
   // Split on spaces.
-  _split(options).forEach(function (s) {
+  split(options).forEach(function (s) {
     if (s.startsWith('--')) {
       long = s
     } else if (s.startsWith('-')) {
@@ -492,7 +490,7 @@ Either.prototype.match = function (left, collected) {
 function Tokens (source, error) {
   var stream
   this.error = error != null ? error : DocoptExit
-  stream = source.constructor === String ? _split(source) : source
+  stream = source.constructor === String ? split(source) : source
   this.push.apply(this, stream)
 }
 
@@ -772,7 +770,7 @@ function parseDefaults (doc) {
 
 function formalUsage (section) {
   section = partition(section, ':')[2] // Drop "usage:"
-  var pu = _split(section)
+  var pu = split(section)
   return '( ' + ((function () {
     var j, len, ref1, results
     ref1 = pu.slice(1)
