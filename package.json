@@ -18,6 +18,10 @@
     {
       "name": "Matthias Rolke",
       "email": "mr.amtrack@gmail.com"
+    },
+    {
+      "name": "Kyle E. Mitchell",
+      "email": "kyle@kemitchell.com"
     }
   ],
   "description": "a command line option parser that will make you smile",
