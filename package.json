@@ -31,9 +31,6 @@
     "lint": "coffeelint docopt.coffee test/*.coffee",
     "prepublish": "coffee -c docopt.coffee"
   },
-  "engines": {
-    "node": ">=0.10.0"
-  },
   "keywords": [
     "command",
     "options",
