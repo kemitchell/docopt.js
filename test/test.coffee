@@ -76,88 +76,88 @@ describe "test.coffee",  ->
         )
 
 
-    it "test_formal_usage", ->
+    it "test_formalUsage", ->
         doc = """
         Usage: prog [-hv] ARG
                    prog N M
 
         prog is a program."""
-        [usage] = docopt.parse_section('usage:', doc)
+        [usage] = docopt.parseSection('usage:', doc)
         assert.deepEqual usage, "Usage: prog [-hv] ARG\n           prog N M"
-        assert.deepEqual docopt.formal_usage(usage), "( [-hv] ARG ) | ( N M )"
+        assert.deepEqual docopt.formalUsage(usage), "( [-hv] ARG ) | ( N M )"
 
 
-    it "test_parse_argv", ->
+    it "test_parseARGV", ->
         o = [new docopt.Option('-h'), new docopt.Option('-v', '--verbose'), new docopt.Option('-f', '--file', 1)]
         TS = (s) -> new docopt.Tokens(s, docopt.DocoptExit)
-        assert.deepEqual docopt.parse_argv(TS(''), o), []
-        assert.deepEqual docopt.parse_argv(TS('-h'), o), [new docopt.Option('-h', null, 0, true)]
+        assert.deepEqual docopt.parseARGV(TS(''), o), []
+        assert.deepEqual docopt.parseARGV(TS('-h'), o), [new docopt.Option('-h', null, 0, true)]
         assert.deepEqual(
-            docopt.parse_argv(TS('-h --verbose'), o)
+            docopt.parseARGV(TS('-h --verbose'), o)
             [new docopt.Option('-h', null, 0, true), new docopt.Option('-v', '--verbose', 0, true)]
         )
         assert.deepEqual(
-            docopt.parse_argv(TS('-h --file f.txt'), o)
+            docopt.parseARGV(TS('-h --file f.txt'), o)
             [new docopt.Option('-h', null, 0, true), new docopt.Option('-f', '--file', 1, 'f.txt')]
         )
         assert.deepEqual(
-            docopt.parse_argv(TS('-h --file f.txt arg'), o)
+            docopt.parseARGV(TS('-h --file f.txt arg'), o)
             [new docopt.Option('-h', null, 0, true), new docopt.Option('-f', '--file', 1, 'f.txt'), new docopt.Argument(null, 'arg')]
         )
         assert.deepEqual(
-            docopt.parse_argv(TS('-h --file f.txt arg arg2'), o)
+            docopt.parseARGV(TS('-h --file f.txt arg arg2'), o)
             [new docopt.Option('-h', null, 0, true), new docopt.Option('-f', '--file', 1, 'f.txt'), new docopt.Argument(null, 'arg'), new docopt.Argument(null, 'arg2')]
         )
         assert.deepEqual(
-            docopt.parse_argv(TS('-h arg -- -v'), o)
+            docopt.parseARGV(TS('-h arg -- -v'), o)
             [new docopt.Option('-h', null, 0, true), new docopt.Argument(null, 'arg'), new docopt.Argument(null, '--'), new docopt.Argument(null, '-v')]
         )
 
-    it "test_parse_pattern", ->
+    it "test_parsePattern", ->
         o = [new docopt.Option('-h'), new docopt.Option('-v', '--verbose'), new docopt.Option('-f', '--file', 1)]
         assert.deepEqual(
-            docopt.parse_pattern('[ -h ]', o)
+            docopt.parsePattern('[ -h ]', o)
             new docopt.Required([new docopt.Optional([new docopt.Option('-h')])])
         )
         assert.deepEqual(
-            docopt.parse_pattern('[ ARG ... ]', o)
+            docopt.parsePattern('[ ARG ... ]', o)
             new docopt.Required([new docopt.Optional([new docopt.OneOrMore([new docopt.Argument('ARG')])])])
         )
         assert.deepEqual(
-            docopt.parse_pattern('[ -h | -v ]', o)
+            docopt.parsePattern('[ -h | -v ]', o)
             new docopt.Required([new docopt.Optional([new docopt.Either([new docopt.Option('-h'), new docopt.Option('-v', '--verbose')])])])
         )
         assert.deepEqual(
-            docopt.parse_pattern('( -h | -v [ --file <f> ] )', o),
+            docopt.parsePattern('( -h | -v [ --file <f> ] )', o),
             new docopt.Required([new docopt.Required(new docopt.Either([new docopt.Option('-h'), new docopt.Required([new docopt.Option('-v', '--verbose'), new docopt.Optional([new docopt.Option('-f', '--file', 1, null)])])]))])
         )
         assert.deepEqual(
-            docopt.parse_pattern('(-h|-v[--file=<f>]N...)', o),
+            docopt.parsePattern('(-h|-v[--file=<f>]N...)', o),
             new docopt.Required([new docopt.Required([new docopt.Either([new docopt.Option('-h'), new docopt.Required([new docopt.Option('-v', '--verbose'), new docopt.Optional([new docopt.Option('-f', '--file', 1, null)]), new docopt.OneOrMore([new docopt.Argument('N')])])])])])
         )
         assert.deepEqual(
-            docopt.parse_pattern('(N [M | (K | L)] | O P)', []),
+            docopt.parsePattern('(N [M | (K | L)] | O P)', []),
                    new docopt.Required([new docopt.Required([new docopt.Either([new docopt.Required([new docopt.Argument('N'), new docopt.Optional([new docopt.Either([new docopt.Argument('M'), new docopt.Required([new docopt.Either([new docopt.Argument('K'), new docopt.Argument('L')])])])])]), new docopt.Required([new docopt.Argument('O'), new docopt.Argument('P')])])])])
         )
         assert.deepEqual(
-            docopt.parse_pattern('[ -h ] [N]', o),
+            docopt.parsePattern('[ -h ] [N]', o),
             new docopt.Required([new docopt.Optional([new docopt.Option('-h')]), new docopt.Optional([new docopt.Argument('N')])])
         )
         assert.deepEqual(
-            docopt.parse_pattern('[options]', o),
+            docopt.parsePattern('[options]', o),
             new docopt.Required([new docopt.Optional([new docopt.OptionsShortcut()])])
         )
         assert.deepEqual(
-            docopt.parse_pattern('[options] A', o),
+            docopt.parsePattern('[options] A', o),
             new docopt.Required([new docopt.Optional([new docopt.OptionsShortcut()]), new docopt.Argument('A')])
         )
         assert.deepEqual(
-            docopt.parse_pattern('-v [options]', o),
+            docopt.parsePattern('-v [options]', o),
             new docopt.Required([new docopt.Option('-v', '--verbose'), new docopt.Optional([new docopt.OptionsShortcut()])])
         )
-        assert.deepEqual docopt.parse_pattern('ADD', o), new docopt.Required([new docopt.Argument('ADD')])
-        assert.deepEqual docopt.parse_pattern('<add>', o), new docopt.Required([new docopt.Argument('<add>')])
-        assert.deepEqual docopt.parse_pattern('add', o), new docopt.Required([new docopt.Command('add')])
+        assert.deepEqual docopt.parsePattern('ADD', o), new docopt.Required([new docopt.Argument('ADD')])
+        assert.deepEqual docopt.parsePattern('<add>', o), new docopt.Required([new docopt.Argument('<add>')])
+        assert.deepEqual docopt.parsePattern('add', o), new docopt.Required([new docopt.Command('add')])
 
 
     it "test_option_match", ->
@@ -370,11 +370,11 @@ describe "test.coffee",  ->
         )
 
 
-    it "test_pattern_fix_repeating_arguments", ->
-        assert.deepEqual new docopt.Option('-a').fix_repeating_arguments(), new docopt.Option('-a')
-        assert.deepEqual new docopt.Argument('N', null).fix_repeating_arguments(), new docopt.Argument('N', null)
+    it "test_pattern_fixRepeatingArguments", ->
+        assert.deepEqual new docopt.Option('-a').fixRepeatingArguments(), new docopt.Option('-a')
+        assert.deepEqual new docopt.Argument('N', null).fixRepeatingArguments(), new docopt.Argument('N', null)
         assert.deepEqual(
-            new docopt.Required([new docopt.Argument('N'), new docopt.Argument('N')]).fix_repeating_arguments()
+            new docopt.Required([new docopt.Argument('N'), new docopt.Argument('N')]).fixRepeatingArguments()
             new docopt.Required([new docopt.Argument('N', []), new docopt.Argument('N', [])])
         )
         assert.deepEqual(
@@ -388,19 +388,19 @@ describe "test.coffee",  ->
     #     assert.deepEqual new Set([new docopt.Argument('N'), new docopt.Argument('N')]), new Set([new docopt.Argument('N')])
 
 
-    it "test_pattern_fix_identities_1", ->
+    it "test_pattern_fixIdentities_1", ->
         pattern = new docopt.Required([new docopt.Argument('N'), new docopt.Argument('N')])
         assert.deepEqual pattern.children[0], pattern.children[1]
         assert.notEqual pattern.children[0], pattern.children[1]
-        pattern.fix_identities()
+        pattern.fixIdentities()
         assert.equal pattern.children[0], pattern.children[1]
 
 
-    it "test_pattern_fix_identities_2", ->
+    it "test_pattern_fixIdentities_2", ->
         pattern = new docopt.Required([new docopt.Optional([new docopt.Argument('X'), new docopt.Argument('N')]), new docopt.Argument('N')])
         assert.deepEqual pattern.children[0].children[1], pattern.children[1]
         assert.notEqual pattern.children[0].children[1], pattern.children[1]
-        pattern.fix_identities()
+        pattern.fixIdentities()
         assert.equal pattern.children[0].children[1], pattern.children[1]
 
 
@@ -650,7 +650,7 @@ describe "test.coffee",  ->
         assert.deepEqual docopt.docopt('usage: prog -l <a>\nOptions: -l <a>', {argv: ['-l', ''], exit: false}), {'-l': ''}
 
 
-    it "test_options_first", ->
+    it "test_optionsFirst", ->
         assert.deepEqual(
             docopt.docopt('usage: prog [--opt] [<args>...]', {argv: '--opt this that', exit: false})
             {'--opt': true, '<args>': ['this', 'that']}
@@ -660,7 +660,7 @@ describe "test.coffee",  ->
             {'--opt': true, '<args>': ['this', 'that']}
         )
         assert.deepEqual(
-            docopt.docopt('usage: prog [--opt] [<args>...]', {argv: 'this that --opt', exit: false, options_first: true})
+            docopt.docopt('usage: prog [--opt] [<args>...]', {argv: 'this that --opt', exit: false, optionsFirst: true})
             {'--opt': false, '<args>': ['this', 'that', '--opt']}
         )
 
@@ -715,11 +715,11 @@ describe "test.coffee",  ->
     BAZZ
     usage: pit stop'''
 
-    it "test_parse_section", ->
-        assert.deepEqual docopt.parse_section('usage:', 'foo bar fizz buzz'), []
-        assert.deepEqual docopt.parse_section('usage:', 'usage: prog'), ['usage: prog']
-        assert.deepEqual docopt.parse_section('usage:', 'usage: -x\n -y'), ['usage: -x\n -y']
-        assert.deepEqual docopt.parse_section('usage:', usage), [
+    it "test_parseSection", ->
+        assert.deepEqual docopt.parseSection('usage:', 'foo bar fizz buzz'), []
+        assert.deepEqual docopt.parseSection('usage:', 'usage: prog'), ['usage: prog']
+        assert.deepEqual docopt.parseSection('usage:', 'usage: -x\n -y'), ['usage: -x\n -y']
+        assert.deepEqual docopt.parseSection('usage:', usage), [
             'usage: this',
             'usage:hai',
             'usage: this that',
@@ -733,4 +733,4 @@ describe "test.coffee",  ->
 
     it "test_issue_126_defaults_not_parsed_correctly_when_tabs", ->
         section = 'Options:\n\t--foo=<arg>  [default: bar]'
-        assert.deepEqual docopt.parse_defaults(section), [new docopt.Option(null, '--foo', 1, 'bar')]
+        assert.deepEqual docopt.parseDefaults(section), [new docopt.Option(null, '--foo', 1, 'bar')]

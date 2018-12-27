@@ -27,8 +27,7 @@
   "description": "a command line option parser that will make you smile",
   "scripts": {
     "test": "mocha --compilers coffee:coffee-script/register",
-    "lint": "coffeelint index.coffee test/*.coffee",
-    "prepublish": "coffee -c index.coffee"
+    "lint": "coffeelint index.coffee test/*.coffee"
   },
   "keywords": [
     "command",
