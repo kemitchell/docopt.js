@@ -1,28 +1,22 @@
-function extend (child, parent) {
-  for (var key in parent) {
-    if (parent.hasOwnProperty(key)) child[key] = parent[key]
-  }
-  function CTOR () {
-    this.constructor = child
-  }
-  CTOR.prototype = parent.prototype
-  child.prototype = new CTOR()
-  child.__super__ = parent.prototype
-  return child
-}
+var Argument = require('./argument')
+var Command = require('./command')
+var Dict = require('./dict')
+var Either = require('./either')
+var Exit = require('./exit')
+var LanguageError = require('./language-error')
+var OneOrMore = require('./one-or-more')
+var Option = require('./option')
+var Optional = require('./optional')
+var OptionsShortcut = require('./options-shortcut')
+var Required = require('./required')
+var Tokens = require('./tokens')
+
+var partition = require('./partition')
+var split = require('./split')
+var transform = require('./transform')
 
 function print () {
   return console.log([].join.call(arguments, ' '))
-}
-
-function enumerate (array) {
-  return array.map(function (element, index) {
-    return [index, element]
-  })
-}
-
-function any (array) {
-  return array.indexOf(true) >= 0
 }
 
 function zip () {
@@ -40,471 +34,8 @@ function zip () {
   return returned
 }
 
-function partition (string, separator) {
-  var parts
-  if (string.indexOf(separator) >= 0) {
-    parts = string.split(separator)
-    return [parts[0], separator, parts.slice(1).join(separator)]
-  } else {
-    return [String(string), '', '']
-  }
-}
-
-function split (string) {
-  return string
-    .trim()
-    .split(/\s+/)
-    .filter(function (i) { return i })
-}
-
 function isUpper (string) {
   return /^[A-Z]+$/g.exec(string)
-}
-
-function DocoptLanguageError (message) {
-  this.message = message
-  DocoptLanguageError.__super__.constructor.call(this, this.message)
-}
-
-extend(DocoptLanguageError, Error)
-
-function DocoptExit (message) {
-  this.message = message
-  DocoptExit.__super__.constructor.call(this, this.message)
-}
-
-extend(DocoptExit, Error)
-
-function Pattern () {
-  return Pattern.__super__.constructor.apply(this, arguments)
-}
-
-extend(Pattern, Object)
-
-Pattern.prototype.fix = function () {
-  this.fixIdentities()
-  this.fixRepeatingArguments()
-  return this
-}
-
-Pattern.prototype.fixIdentities = function (uniq) {
-  // Make pattern-tree tips point to same object if they are equal.
-  if (!uniq) uniq = null
-  if (!this.hasOwnProperty('children')) return this
-  if (uniq === null) {
-    uniq = {}
-    var flat = this.flat()
-    flat.forEach(function (k) { uniq[k] = k })
-  }
-  var self = this
-  enumerate(this.children).forEach(function (pair) {
-    var i = pair[0]
-    var c = pair[1]
-    if (!c.hasOwnProperty('children')) {
-      console.assert(uniq.hasOwnProperty(c))
-      self.children[i] = uniq[c]
-    } else {
-      c.fixIdentities(uniq)
-    }
-  })
-  return this
-}
-
-Pattern.prototype.fixRepeatingArguments = function () {
-  // Fix elements that should accumulate/increment values.
-  var either = transform(this).children.map(function (child) {
-    return child.children
-  })
-  either.forEach(function (mycase) {
-    var counts = {}
-    mycase.forEach(function (c) {
-      counts[c] = (counts[c] ? counts[c] : 0) + 1
-    })
-    var countAtLeastOne = mycase.filter(function (child) {
-      return counts[child] > 1
-    })
-    countAtLeastOne.forEach(function (e) {
-      if (
-        e.constructor === Argument ||
-        (e.constructor === Option && e.argcount)
-      ) {
-        if (e.value === null) {
-          e.value = []
-        } else if (e.value.constructor !== Array) {
-          e.value = split(e.value)
-        }
-      }
-      if (
-        e.constructor === Command ||
-        (e.constructor === Option && e.argcount === 0)
-      ) {
-        e.value = 0
-      }
-    })
-  })
-  return this
-}
-
-function transform (pattern) {
-  // Expand pattern into an (almost) equivalent one, but with single Either.
-  // Example: ((-a | -b) (-c | -d)) => (-a -c | -a -d | -b -c | -b -d)
-  // Quirks: [-a] => (-a), (-a...) => (-a -a)
-  var result = []
-  var parents = [Required, Optional, OptionsShortcut, Either, OneOrMore]
-  var groups = [[pattern]]
-  while (groups.length) {
-    var children = groups.shift()
-    if (
-      any(
-        parents.map(function (t) {
-          return children.some(function (c) {
-            return c.constructor === t
-          })
-        })
-      )
-    ) {
-      var child = children.filter(function (c) {
-        return parents.includes(c.constructor)
-      })[0]
-      var index = children.indexOf(child)
-      if (index >= 0) {
-        children.splice(index, 1)
-      }
-      if (child.constructor === Either) {
-        child.children.forEach(function (c) {
-          groups.push([c].concat(children))
-        })
-      } else if (child.constructor === OneOrMore) {
-        groups.push((child.children.concat(child.children)).concat(children))
-      } else {
-        groups.push(child.children.concat(children))
-      }
-    } else {
-      result.push(children)
-    }
-  }
-  return new Either(result.map(function (e) {
-    return new Required(e)
-  }))
-}
-
-function LeafPattern (name1, value1) {
-  this.name = name1
-  this.value = value1 != null ? value1 : null
-}
-
-extend(LeafPattern, Pattern)
-
-LeafPattern.prototype.toString = function () {
-  return this.constructor.name + '(' + this.name + ', ' + this.value + ')'
-}
-
-LeafPattern.prototype.flat = function (types) {
-  if (!types) types = []
-  types = types instanceof Array ? types : [types]
-  if (!types.length || types.includes(this.constructor)) {
-    return [this]
-  } else {
-    return []
-  }
-}
-
-LeafPattern.prototype.match = function (left, collected) {
-  if (!collected) collected = []
-  var singleMatch = this.singleMatch(left)
-  var pos = singleMatch[0]
-  var match = singleMatch[1]
-  if (match === null) {
-    return [false, left, collected]
-  }
-  var left_ = left.slice(0, pos).concat(left.slice(pos + 1))
-  var self = this
-  var sameName = collected.filter(function (a) {
-    return a.name === self.name
-  })
-  var increment
-  if (Number.isInteger(this.value) || this.value instanceof Array) {
-    if (Number.isInteger(this.value)) {
-      increment = 1
-    } else {
-      increment = typeof match.value === 'string' ? [match.value] : match.value
-    }
-    if (!sameName.length) {
-      match.value = increment
-      return [true, left_, collected.concat(match)]
-    }
-    if (Number.isInteger(this.value)) {
-      sameName[0].value += increment
-    } else {
-      sameName[0].value = [].concat(sameName[0].value, increment)
-    }
-    return [true, left_, collected]
-  }
-  return [true, left_, collected.concat(match)]
-}
-
-function BranchPattern (children) {
-  this.children = children instanceof Array ? children : [children]
-}
-
-extend(BranchPattern, Pattern)
-
-BranchPattern.prototype.toString = function () {
-  var representation = this.children.join(', ')
-  return this.constructor.name + '(' + representation + ')'
-}
-
-BranchPattern.prototype.flat = function (types) {
-  if (!types) types = []
-  types = types instanceof Array ? types : [types]
-  if (types.includes(this.constructor)) {
-    return [this]
-  }
-  return this.children
-    .filter(function (child) { return child instanceof Pattern })
-    .map(function (child) { return child.flat(types) })
-    .reduce(function (pv, cv) {
-      return pv.concat(cv)
-    }, [])
-}
-
-function Argument () {
-  return Argument.__super__.constructor.apply(this, arguments)
-}
-
-extend(Argument, LeafPattern)
-
-Argument.prototype.singleMatch = function (left) {
-  var enumerated = enumerate(left)
-  for (var index = 0; index < enumerated.length; index++) {
-    var element = enumerated[index]
-    var n = element[0]
-    var pattern = element[1]
-    if (pattern.value === '--') {
-      return [null, null]
-    }
-    if (pattern.constructor === Argument) {
-      return [n, new Argument(this.name, pattern.value)]
-    }
-  }
-  return [null, null]
-}
-
-Argument.parse = function (source) {
-  var name, value
-  name = /(<\S*?>)/ig.exec(source)[1]
-  value = /\[default:\s+(.*)\]/ig.exec(source)
-  return new Argument(name, value ? value[1] : null)
-}
-
-function Command (name1, value1) {
-  this.name = name1
-  this.value = value1 != null ? value1 : false
-}
-
-extend(Command, Argument)
-
-Command.prototype.singleMatch = function (left) {
-  var enumerated = enumerate(left)
-  for (var index = 0; index < enumerated.length; index++) {
-    var element = enumerated[index]
-    var n = element[0]
-    var pattern = element[1]
-    if (pattern.constructor === Argument) {
-      if (pattern.value === this.name) {
-        return [n, new Command(this.name, true)]
-      }
-      break
-    }
-  }
-  return [null, null]
-}
-
-function Option (short, long, argcount, value) {
-  this.short = short != null ? short : null
-  this.long = long != null ? long : null
-  this.argcount = argcount != null ? argcount : 0
-  if (!value) value = false
-  console.assert(this.argcount === 0 || this.argcount === 1)
-  this.value = value === false && this.argcount > 0 ? null : value
-  this.name = this.long || this.short
-}
-
-extend(Option, LeafPattern)
-
-Option.prototype.toString = function () {
-  return 'Option(' + this.short + ', ' + this.long + ', ' + this.argcount + ', ' + this.value + ')'
-}
-
-Option.parse = function (optionDescription) {
-  var short = null
-  var long = null
-  var argcount = 0
-  var value = false
-  var partitioned = partition(optionDescription.trim(), '  ')
-  var options = partitioned[0]
-  var description = partitioned[2]
-  options = options.replace(/,|=/g, ' ')
-  // Split on spaces.
-  split(options).forEach(function (s) {
-    if (s.startsWith('--')) {
-      long = s
-    } else if (s.startsWith('-')) {
-      short = s
-    } else {
-      argcount = 1
-    }
-  })
-  if (argcount > 0) {
-    var matched = /\[default:\s+(.*)\]/ig.exec(description)
-    value = matched ? matched[1] : null
-  }
-  return new Option(short, long, argcount, value)
-}
-
-Option.prototype.singleMatch = function (left) {
-  var enumerated = enumerate(left)
-  for (var index = 0; index < enumerated.length; index++) {
-    var element = enumerated[index]
-    var n = element[0]
-    var pattern = element[1]
-    if (this.name === pattern.name) {
-      return [n, pattern]
-    }
-  }
-  return [null, null]
-}
-
-function Required () {
-  return Required.__super__.constructor.apply(this, arguments)
-}
-
-extend(Required, BranchPattern)
-
-Required.prototype.match = function (left, collected) {
-  if (!collected) collected = []
-  var l = left
-  var c = collected
-  for (var index = 0; index < this.children.length; index++) {
-    var p = this.children[index]
-    var match = p.match(l, c)
-    var matched = match[0]
-    l = match[1]
-    c = match[2]
-    if (!matched) return [false, left, collected]
-  }
-  return [true, l, c]
-}
-
-function Optional () {
-  return Optional.__super__.constructor.apply(this, arguments)
-}
-
-extend(Optional, BranchPattern)
-
-Optional.prototype.match = function (left, collected) {
-  if (!collected) collected = []
-  this.children.forEach(function (p) {
-    var match = p.match(left, collected)
-    left = match[1]
-    collected = match[2]
-  })
-  return [true, left, collected]
-}
-
-function OptionsShortcut () {
-  return OptionsShortcut.__super__.constructor.apply(this, arguments)
-}
-
-extend(OptionsShortcut, Optional)
-
-function OneOrMore () {
-  return OneOrMore.__super__.constructor.apply(this, arguments)
-}
-
-extend(OneOrMore, BranchPattern)
-
-OneOrMore.prototype.match = function (left, collected) {
-  console.assert(this.children.length === 1)
-  if (!collected) collected = []
-  var l = left
-  var c = collected
-  var l_ = []
-  var matched = true
-  var times = 0
-  while (matched) {
-    // Could it be that something didn't match but changed l or c?
-    var current = this.children[0].match(l, c)
-    matched = current[0]
-    l = current[1]
-    c = current[2]
-    times += matched ? 1 : 0
-    if (l_.join(', ') === l.join(', ')) break
-    l_ = l // copy?
-  }
-  if (times >= 1) {
-    return [true, l, c]
-  }
-  return [false, left, collected]
-}
-
-function Either () {
-  return Either.__super__.constructor.apply(this, arguments)
-}
-
-extend(Either, BranchPattern)
-
-Either.prototype.match = function (left, collected) {
-  if (!collected) collected = []
-  var outcomes = []
-  this.children.forEach(function (p) {
-    var outcome = p.match(left, collected)
-    if (outcome[0]) outcomes.push(outcome)
-  })
-  if (outcomes.length > 0) {
-    outcomes.sort(function (a, b) {
-      if (a[1].length > b[1].length) return 1
-      else if (a[1].length < b[1].length) return -1
-      else return 0
-    })
-    return outcomes[0]
-  }
-  return [false, left, collected]
-}
-
-function Tokens (source, error) {
-  var stream
-  this.error = error != null ? error : DocoptExit
-  stream = source.constructor === String ? split(source) : source
-  this.push.apply(this, stream)
-}
-
-extend(Tokens, Array)
-
-Tokens.prototype.move = function () {
-  if (this.length) return [].shift.apply(this)
-  else return null
-}
-
-Tokens.prototype.current = function () {
-  if (this.length) return this[0]
-  else return null
-}
-
-Tokens.from_pattern = function (source) {
-  var s
-  source = source.replace(/([[\]()|]|\.\.\.)/g, ' $1 ')
-  source = (function () {
-    var j, len, ref, results
-    ref = source.split(/\s+|(\S*<.*?>)/)
-    results = []
-    for (j = 0, len = ref.length; j < len; j++) {
-      s = ref[j]
-      if (s) results.push(s)
-    }
-    return results
-  })()
-  return new Tokens(source, DocoptLanguageError)
 }
 
 function parseSection (name, source) {
@@ -536,7 +67,7 @@ function parseShorts (tokens, options) {
     } else if (similar.length < 1) {
       o = new Option(short, null, 0)
       options.push(o)
-      if (tokens.error === DocoptExit) {
+      if (tokens.error === Exit) {
         o = new Option(short, null, 0, true)
       }
     } else {
@@ -554,7 +85,7 @@ function parseShorts (tokens, options) {
           left = ''
         }
       }
-      if (tokens.error === DocoptExit) {
+      if (tokens.error === Exit) {
         o.value = value !== null ? value : true
       }
     }
@@ -574,7 +105,7 @@ function parseLong (tokens, options) {
   var similar = options.filter(function (o) {
     return o.long === long
   })
-  if (tokens.error === DocoptExit && similar.length === 0) {
+  if (tokens.error === Exit && similar.length === 0) {
     similar = options.filter(function (o) {
       return o.long && o.long.startsWith(long)
     })
@@ -591,7 +122,7 @@ function parseLong (tokens, options) {
     var argcount = eq === '=' ? 1 : 0
     var o = new Option(null, long, argcount)
     options.push(o)
-    if (tokens.error === DocoptExit) {
+    if (tokens.error === Exit) {
       o = new Option(null, long, argcount, argcount > 0 ? value : true)
     }
   } else {
@@ -609,7 +140,7 @@ function parseLong (tokens, options) {
         value = tokens.move()
       }
     }
-    if (tokens.error === DocoptExit) {
+    if (tokens.error === Exit) {
       o.value = value !== null ? value : true
     }
   }
@@ -618,7 +149,7 @@ function parseLong (tokens, options) {
 
 function parsePattern (source, options) {
   var result, tokens
-  tokens = Tokens.from_pattern(source)
+  tokens = Tokens.fromPattern(source)
   result = parseExpr(tokens, options)
   if (tokens.current() !== null) {
     throw new tokens.error('unexpected ending: ' + (tokens.join(' ')))
@@ -766,28 +297,6 @@ function extras (help, version, options, doc) {
   return ''
 }
 
-function Dict (pairs) {
-  var self = this
-  pairs.forEach(function (pair) {
-    var key = pair[0]
-    var value = pair[1]
-    self[key] = value
-  })
-}
-
-extend(Dict, Object)
-
-Dict.prototype.toObject = function () {
-  var self = this
-  var dict = {}
-  Object.keys(this)
-    .sort()
-    .forEach(function (name) {
-      dict[name] = self[name]
-    })
-  return dict
-}
-
 function docopt (doc, kwargs) {
   if (!kwargs) kwargs = {}
   var allowedargs = ['argv', 'name', 'help', 'version', 'optionsFirst', 'exit']
@@ -804,14 +313,14 @@ function docopt (doc, kwargs) {
   try {
     var usageSections = parseSection('usage:', doc)
     if (usageSections.length === 0) {
-      throw new DocoptLanguageError('"usage:" (case-insensitive) not found.')
+      throw new LanguageError('"usage:" (case-insensitive) not found.')
     }
     if (usageSections.length > 1) {
-      throw new DocoptLanguageError('More than one "usage:" (case-insensitive).')
+      throw new LanguageError('More than one "usage:" (case-insensitive).')
     }
-    DocoptExit.usage = usageSections[0]
+    Exit.usage = usageSections[0]
     var options = parseDefaults(doc)
-    var pattern = parsePattern(formalUsage(DocoptExit.usage), options)
+    var pattern = parsePattern(formalUsage(Exit.usage), options)
     var parsedARGV = parseARGV(new Tokens(argv), options, optionsFirst)
     var patternOptions = pattern.flat(Option)
     pattern.flat(OptionsShortcut).forEach(function (optionsShortcut) {
@@ -844,8 +353,9 @@ function docopt (doc, kwargs) {
         })
       return new Dict(pairs).toObject()
     }
-    throw new DocoptExit(DocoptExit.usage)
+    throw new Exit(Exit.usage)
   } catch (error) {
+    console.error(error)
     if (!exit) {
       throw error
     } else {
@@ -859,8 +369,8 @@ function docopt (doc, kwargs) {
 
 module.exports = {
   docopt: docopt,
-  DocoptLanguageError: DocoptLanguageError,
-  DocoptExit: DocoptExit,
+  LanguageError: LanguageError,
+  Exit: Exit,
   Option: Option,
   Argument: Argument,
   Command: Command,
@@ -868,7 +378,6 @@ module.exports = {
   OptionsShortcut: OptionsShortcut,
   Either: Either,
   Optional: Optional,
-  Pattern: Pattern,
   OneOrMore: OneOrMore,
   Tokens: Tokens,
   Dict: Dict,
