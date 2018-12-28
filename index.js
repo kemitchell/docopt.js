@@ -1,3 +1,5 @@
+var inherits = require('util').inherits
+
 function extend (child, parent) {
   for (var key in parent) {
     if (parent.hasOwnProperty(key)) child[key] = parent[key]
@@ -62,24 +64,24 @@ function isUpper (string) {
 }
 
 function DocoptLanguageError (message) {
+  Object.getPrototypeOf(DocoptLanguageError).call(this)
   this.message = message
-  DocoptLanguageError.__super__.constructor.call(this, this.message)
 }
 
-extend(DocoptLanguageError, Error)
+inherits(DocoptLanguageError, Error)
 
 function DocoptExit (message) {
+  Object.getPrototypeOf(DocoptExit).call(this)
   this.message = message
-  DocoptExit.__super__.constructor.call(this, this.message)
 }
 
-extend(DocoptExit, Error)
+inherits(DocoptExit, Error)
 
 function Pattern () {
-  return Pattern.__super__.constructor.apply(this, arguments)
+  Object.getPrototypeOf(Pattern).call(this)
 }
 
-extend(Pattern, Object)
+inherits(Pattern, Object)
 
 Pattern.prototype.fix = function () {
   this.fixIdentities()
@@ -188,12 +190,13 @@ function transform (pattern) {
   }))
 }
 
-function LeafPattern (name1, value1) {
-  this.name = name1
-  this.value = value1 != null ? value1 : null
+function LeafPattern (name, value) {
+  Object.getPrototypeOf(LeafPattern).call(this)
+  this.name = name
+  this.value = value != null ? value : null
 }
 
-extend(LeafPattern, Pattern)
+inherits(LeafPattern, Pattern)
 
 LeafPattern.prototype.toString = function () {
   return this.constructor.name + '(' + this.name + ', ' + this.value + ')'
@@ -244,10 +247,11 @@ LeafPattern.prototype.match = function (left, collected) {
 }
 
 function BranchPattern (children) {
+  Object.getPrototypeOf(BranchPattern).call(this)
   this.children = children instanceof Array ? children : [children]
 }
 
-extend(BranchPattern, Pattern)
+inherits(BranchPattern, Pattern)
 
 BranchPattern.prototype.toString = function () {
   var representation = this.children.join(', ')
@@ -297,12 +301,13 @@ Argument.parse = function (source) {
   return new Argument(name, value ? value[1] : null)
 }
 
-function Command (name1, value1) {
-  this.name = name1
-  this.value = value1 != null ? value1 : false
+function Command (name, value) {
+  Object.getPrototypeOf(Command).call(this)
+  this.name = name
+  this.value = value != null ? value : false
 }
 
-extend(Command, Argument)
+inherits(Command, Argument)
 
 Command.prototype.singleMatch = function (left) {
   var enumerated = enumerate(left)
@@ -321,6 +326,7 @@ Command.prototype.singleMatch = function (left) {
 }
 
 function Option (short, long, argcount, value) {
+  Object.getPrototypeOf(Command).call(this)
   this.short = short != null ? short : null
   this.long = long != null ? long : null
   this.argcount = argcount != null ? argcount : 0
@@ -330,7 +336,7 @@ function Option (short, long, argcount, value) {
   this.name = this.long || this.short
 }
 
-extend(Option, LeafPattern)
+inherits(Option, LeafPattern)
 
 Option.prototype.toString = function () {
   return 'Option(' + this.short + ', ' + this.long + ', ' + this.argcount + ', ' + this.value + ')'
