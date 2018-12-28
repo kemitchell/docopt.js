@@ -32,12 +32,14 @@ isInteger = Number.isInteger || (value) ->
            Math.floor(value) == value
 
 class DocoptLanguageError extends Error
-    constructor: (@message) ->
-        super @message
+    constructor: (message) ->
+        super(message)
+        @message = message
 
 class DocoptExit extends Error
-    constructor: (@message) ->
-        super @message
+    constructor: (message) ->
+        super(message)
+        @message = message
 
 class Pattern extends Object
 
@@ -114,7 +116,10 @@ transform = (pattern) ->
 class LeafPattern extends Pattern
     """Leaf/terminal node of a pattern tree."""
 
-    constructor: (@name, @value=null) ->
+    constructor: (name, value=null) ->
+        super()
+        @name = name
+        @value = value
 
     toString: -> "#{@.constructor.name}(#{@name}, #{@value})"
 
@@ -151,6 +156,7 @@ class BranchPattern extends Pattern
     """Branch/inner node of a pattern tree."""
 
     constructor: (children) ->
+        super()
         @children = if children instanceof Array then children else [children]
 
     toString: -> "#{@.constructor.name}(#{(a for a in @children).join(', ')})"
@@ -179,7 +185,10 @@ class Argument extends LeafPattern
 
 class Command extends Argument
 
-    constructor: (@name, @value=false) ->
+    constructor: (name, value=false) ->
+        super()
+        @name = name
+        @value = value
 
     singleMatch: (left) ->
         for [n, pattern] in enumerate(left)
@@ -192,8 +201,12 @@ class Command extends Argument
 
 class Option extends LeafPattern
 
-    constructor: (@short=null, @long=null, @argcount=0, value=false) ->
-        console.assert(@argcount in [0,1])
+    constructor: (short=null, long=null, argcount=0, value=false) ->
+        super()
+        @short = short
+        @long = long
+        @argcount = argcount
+        console.assert(argcount in [0,1])
         @value = if value is false and @argcount > 0 then null else value
         @name = @long or @short
 
@@ -293,6 +306,7 @@ class Either extends BranchPattern
 class Tokens extends Array
 
     constructor: (source, @error=DocoptExit) ->
+        super()
         stream = if source.constructor is String then _split(source) else source
         @push.apply @, stream
 
@@ -491,6 +505,7 @@ extras = (help, version, options, doc) ->
 class Dict extends Object
 
     constructor: (pairs) ->
+        super()
         @[key] = value for [key, value] in pairs
 
     toObject: () ->

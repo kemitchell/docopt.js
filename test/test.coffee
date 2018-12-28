@@ -16,41 +16,41 @@ describe "test.coffee",  ->
 
 
     it "test_option", ->
-        assert.deepEqual new docopt.Option.parse('-h'), new docopt.Option('-h', null)
-        assert.deepEqual new docopt.Option.parse('--help'), new docopt.Option(null, '--help')
-        assert.deepEqual new docopt.Option.parse('-h --help'), new docopt.Option('-h', '--help')
-        assert.deepEqual new docopt.Option.parse('-h, --help'), new docopt.Option('-h', '--help')
+        assert.deepEqual docopt.Option.parse('-h'), new docopt.Option('-h', null)
+        assert.deepEqual docopt.Option.parse('--help'), new docopt.Option(null, '--help')
+        assert.deepEqual docopt.Option.parse('-h --help'), new docopt.Option('-h', '--help')
+        assert.deepEqual docopt.Option.parse('-h, --help'), new docopt.Option('-h', '--help')
 
-        assert.deepEqual new docopt.Option.parse('-h TOPIC'), new docopt.Option('-h', null, 1)
-        assert.deepEqual new docopt.Option.parse('--help TOPIC'), new docopt.Option(null, '--help', 1)
-        assert.deepEqual new docopt.Option.parse('-h TOPIC --help TOPIC'), new docopt.Option('-h', '--help', 1)
-        assert.deepEqual new docopt.Option.parse('-h TOPIC, --help TOPIC'), new docopt.Option('-h', '--help', 1)
-        assert.deepEqual new docopt.Option.parse('-h TOPIC, --help=TOPIC'), new docopt.Option('-h', '--help', 1)
+        assert.deepEqual docopt.Option.parse('-h TOPIC'), new docopt.Option('-h', null, 1)
+        assert.deepEqual docopt.Option.parse('--help TOPIC'), new docopt.Option(null, '--help', 1)
+        assert.deepEqual docopt.Option.parse('-h TOPIC --help TOPIC'), new docopt.Option('-h', '--help', 1)
+        assert.deepEqual docopt.Option.parse('-h TOPIC, --help TOPIC'), new docopt.Option('-h', '--help', 1)
+        assert.deepEqual docopt.Option.parse('-h TOPIC, --help=TOPIC'), new docopt.Option('-h', '--help', 1)
 
-        assert.deepEqual new docopt.Option.parse('-h  Description...'), new docopt.Option('-h', null)
-        assert.deepEqual new docopt.Option.parse('-h --help  Description...'), new docopt.Option('-h', '--help')
-        assert.deepEqual new docopt.Option.parse('-h TOPIC  Description...'), new docopt.Option('-h', null, 1)
+        assert.deepEqual docopt.Option.parse('-h  Description...'), new docopt.Option('-h', null)
+        assert.deepEqual docopt.Option.parse('-h --help  Description...'), new docopt.Option('-h', '--help')
+        assert.deepEqual docopt.Option.parse('-h TOPIC  Description...'), new docopt.Option('-h', null, 1)
 
-        assert.deepEqual new docopt.Option.parse('    -h'), new docopt.Option('-h', null)
+        assert.deepEqual docopt.Option.parse('    -h'), new docopt.Option('-h', null)
 
         assert.deepEqual(
-            new docopt.Option.parse('-h TOPIC  Descripton... [default: 2]')
+            docopt.Option.parse('-h TOPIC  Descripton... [default: 2]')
             new docopt.Option('-h', null, 1, '2')
         )
         assert.deepEqual(
-            new docopt.Option.parse('-h TOPIC  Descripton... [default: topic-1]')
+            docopt.Option.parse('-h TOPIC  Descripton... [default: topic-1]')
             new docopt.Option('-h', null, 1, 'topic-1')
         )
         assert.deepEqual(
-            new docopt.Option.parse('--help=TOPIC  ... [default: 3.14]')
+            docopt.Option.parse('--help=TOPIC  ... [default: 3.14]')
             new docopt.Option(null, '--help', 1, '3.14')
         )
         assert.deepEqual(
-            new docopt.Option.parse('-h, --help=DIR  ... [default: ./]')
+            docopt.Option.parse('-h, --help=DIR  ... [default: ./]')
             new docopt.Option('-h', '--help', 1, "./")
         )
         assert.deepEqual(
-            new docopt.Option.parse('-h TOPIC  Descripton... [dEfAuLt: 2]')
+            docopt.Option.parse('-h TOPIC  Descripton... [dEfAuLt: 2]')
             new docopt.Option('-h', null, 1, '2')
         )
 

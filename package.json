@@ -26,7 +26,7 @@
   ],
   "description": "a command line option parser that will make you smile",
   "scripts": {
-    "test": "mocha --compilers coffee:coffee-script/register",
+    "test": "mocha --compilers coffee:coffeescript/register",
     "lint": "coffeelint index.coffee test/*.coffee",
     "prepublish": "coffee -c index.coffee"
   },
@@ -42,8 +42,8 @@
   "repository": "kemitchell/docopt.js",
   "devDependencies": {
     "chai": "^2.2.0",
-    "coffee-script": "^1.9.1",
     "coffeelint": "^1.9.2",
+    "coffeescript": "^2.3.2",
     "mocha": "^2.2.1"
   }
 }
