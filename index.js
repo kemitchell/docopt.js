@@ -132,7 +132,7 @@ Pattern.prototype.fixRepeatingArguments = function () {
       ) {
         if (e.value === null) {
           e.value = []
-        } else if (e.value.constructor !== Array) {
+        } else if (!Array.isArray(e.value)) {
           e.value = split(e.value)
         }
       }
@@ -160,7 +160,7 @@ function transform (pattern) {
       any(
         parents.map(function (t) {
           return children.some(function (c) {
-            return c.constructor === t
+            return c instanceof t
           })
         })
       )
@@ -172,11 +172,11 @@ function transform (pattern) {
       if (index >= 0) {
         children.splice(index, 1)
       }
-      if (child.constructor === Either) {
+      if (child instanceof Either) {
         child.children.forEach(function (c) {
           groups.push([c].concat(children))
         })
-      } else if (child.constructor === OneOrMore) {
+      } else if (child instanceof OneOrMore) {
         groups.push((child.children.concat(child.children)).concat(children))
       } else {
         groups.push(child.children.concat(children))
@@ -287,7 +287,7 @@ Argument.prototype.singleMatch = function (left) {
     if (pattern.value === '--') {
       return [null, null]
     }
-    if (pattern.constructor === Argument) {
+    if (pattern instanceof Argument) {
       return [n, new Argument(this.name, pattern.value)]
     }
   }
@@ -315,7 +315,7 @@ Command.prototype.singleMatch = function (left) {
     var element = enumerated[index]
     var n = element[0]
     var pattern = element[1]
-    if (pattern.constructor === Argument) {
+    if (pattern instanceof Argument) {
       if (pattern.value === this.name) {
         return [n, new Command(this.name, true)]
       }
@@ -481,7 +481,7 @@ Either.prototype.match = function (left, collected) {
 function Tokens (source, error) {
   var stream
   this.error = error != null ? error : DocoptExit
-  stream = source.constructor === String ? split(source) : source
+  stream = typeof source === 'string' ? split(source) : source
   this.push.apply(this, stream)
 }
 
