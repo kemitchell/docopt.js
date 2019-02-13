@@ -474,7 +474,7 @@ Either.prototype.match = function (left, collected) {
 
 function Tokens (source, error) {
   var stream
-  this.error = error != null ? error : DocoptExit
+  this.Error = error != null ? error : DocoptExit
   stream = source.constructor === String ? split(source) : source
   this.push.apply(this, stream)
 }
@@ -532,11 +532,11 @@ function parseShorts (tokens, options) {
     })
     var o, value
     if (similar.length > 1) {
-      throw new tokens.error(short + " is specified ambiguously " + similar.length + " times")
+      throw new tokens.Error(short + ' is specified ambiguously ' + similar.length + ' times')
     } else if (similar.length < 1) {
       o = new Option(short, null, 0)
       options.push(o)
-      if (tokens.error === DocoptExit) {
+      if (tokens.Error === DocoptExit) {
         o = new Option(short, null, 0, true)
       }
     } else {
@@ -546,7 +546,7 @@ function parseShorts (tokens, options) {
         if (left === '') {
           var current = tokens.current()
           if (current === null || current === '--') {
-            throw new tokens.error(short + ' requires argument')
+            throw new tokens.Error(short + ' requires argument')
           }
           value = tokens.move()
         } else {
@@ -554,7 +554,7 @@ function parseShorts (tokens, options) {
           left = ''
         }
       }
-      if (tokens.error === DocoptExit) {
+      if (tokens.Error === DocoptExit) {
         o.value = value !== null ? value : true
       }
     }
@@ -574,7 +574,7 @@ function parseLong (tokens, options) {
   var similar = options.filter(function (o) {
     return o.long === long
   })
-  if (tokens.error === DocoptExit && similar.length === 0) {
+  if (tokens.Error === DocoptExit && similar.length === 0) {
     similar = options.filter(function (o) {
       return o.long && o.long.startsWith(long)
     })
@@ -586,30 +586,30 @@ function parseLong (tokens, options) {
         return o.long
       })
       .join(', ')
-    throw new tokens.error(long + " is not a unique prefix: " + longs + "?")
+    throw new tokens.Error(long + ' is not a unique prefix: ' + longs + '?')
   } else if (similar.length < 1) {
     var argcount = eq === '=' ? 1 : 0
     var o = new Option(null, long, argcount)
     options.push(o)
-    if (tokens.error === DocoptExit) {
+    if (tokens.Error === DocoptExit) {
       o = new Option(null, long, argcount, argcount > 0 ? value : true)
     }
   } else {
     o = new Option(similar[0].short, similar[0].long, similar[0].argcount, similar[0].value)
     if (o.argcount === 0) {
       if (value !== null) {
-        throw new tokens.error(o.long + " must not have an argument")
+        throw new tokens.Error(o.long + ' must not have an argument')
       }
     } else {
       if (value === null) {
         var current = tokens.current()
         if (current === null || current === '--') {
-          throw new tokens.error(o.long + " requires argument")
+          throw new tokens.Error(o.long + ' requires argument')
         }
         value = tokens.move()
       }
     }
-    if (tokens.error === DocoptExit) {
+    if (tokens.Error === DocoptExit) {
       o.value = value !== null ? value : true
     }
   }
@@ -621,7 +621,7 @@ function parsePattern (source, options) {
   tokens = Tokens.from_pattern(source)
   result = parseExpr(tokens, options)
   if (tokens.current() !== null) {
-    throw new tokens.error('unexpected ending: ' + (tokens.join(' ')))
+    throw new tokens.Error('unexpected ending: ' + (tokens.join(' ')))
   }
   return new Required(result)
 }
@@ -669,7 +669,7 @@ function parseAtom (tokens, options) {
     var PatternType = ref[1]
     result = new PatternType(parseExpr(tokens, options))
     if (tokens.move() !== matching) {
-      throw new tokens.error("Unmatched '" + token + "'")
+      throw new tokens.Error("Unmatched '" + token + "'")
     }
     return [result]
   } else if (token === 'options') {
